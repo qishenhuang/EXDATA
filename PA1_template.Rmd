@@ -1,0 +1,108 @@
+---
+title: "Reproducible Research, Peer Assigtnment #1"
+author: "Qishen Huang"
+date: "Sunday, May 17, 2015"
+output: html_document
+---
+
+#Loading and preprocessing the data
+Loading and preprocessing the data. Show any code that is needed to
+
+1. Load the data (i.e. read.csv())
+2. Process/transform the data (if necessary) into a format suitable for your analysis
+
+```{r}
+data <-read.csv('activity.csv')
+```
+
+#What is mean total number of steps taken per day?
+For this part of the assignment, you can ignore the missing values in the dataset.
+
+1. Calculate the total number of steps taken per day
+2. If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day
+3. Calculate and report the mean and median of the total number of steps taken per day
+
+```{r}
+data2 <- na.omit(data)
+data3 <- aggregate(data2$steps, by=list(data2$date), FUN=sum)
+names(data3) <- c('Day', 'Steps')
+mean(data3$Steps)
+median(data3$Steps)
+```
+
+
+#What is the average daily activity pattern?
+
+1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+
+```{r}
+data2 <- na.omit(data)
+data4 <- aggregate(data2$steps, by=list(data2$interval), FUN=mean)
+names(data4) <- c("interval", "avg_steps")
+
+plot(data4, type="l")
+
+data4$interval[data4$avg_steps==max(data4$avg_steps)]
+```
+
+#Imputing missing values
+
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
+
+1.Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+```{r}
+sum(is.na(data))
+
+data6 <- data
+ 
+data7 <- merge(data6, data4) 
+
+data7$steps[is.na(data7$steps)] <- data7$avg_steps[is.na(data7$steps)]
+data7$avg_steps <- NULL
+
+data8 <- aggregate(data7$steps, by=list(data7$date), FUN=sum)
+names(data8) <- c('Day', 'Steps')
+
+barplot(t(data8$Steps), main="Steps by Day", ylab="Steps", xlab="Day",
+   names.arg=data8$Day) 
+
+mean(data8$Steps)
+median(data8$Steps)
+
+```
+
+#Are there differences in activity patterns between weekdays and weekends?
+
+For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
+
+1. Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).  
+
+
+```{r}
+data2 <- na.omit(data)
+data2$weekday = weekdays(as.Date(data2$date))
+data2$weekday <- ifelse(data2$weekday %in% c('Sunday', 'Saturday'), 'Weekend', 'Weekdays')
+data9 <- aggregate(data2$steps~ data2$interval + data2$weekday, FUN=mean)
+names(data9) <- c('interval', 'weekday', 'avg_steps')
+
+
+library("lattice")
+p <- xyplot(avg_steps ~ interval | factor(weekday), data=data9, layout=c(1, 2),
+       type = 'l',   main="Average Number of Steps",
+       xlab="Interval",  ylab="Number of Steps")
+print (p)    
+
+```
+
+
